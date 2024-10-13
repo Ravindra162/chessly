@@ -1,3 +1,8 @@
 body {
     background-color: darkgrey;
 }
+
+#auth {
+    background-image: url("./assets/chess_bg.png");
+    border-image-repeat: norepeat;
+}

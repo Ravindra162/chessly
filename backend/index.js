@@ -3,13 +3,18 @@ import cors from 'cors';
 import { createServer } from 'http';
 import WebSocket, { WebSocketServer } from 'ws';
 import { GameManager } from './gameManager.js';
+import authRoutes from './routes/auth.js';
+import userRoutes from './routes/user.js'
 const app = express();
 app.use(cors({
   origin: '*',
 }));
-
+app.use(express.json());
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
+
+app.use("/auth", authRoutes);
+app.use("/user",userRoutes)
 
 const gameManager = new GameManager();
 

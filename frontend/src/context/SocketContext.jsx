@@ -7,6 +7,7 @@ export function SocketContextProvider({ children }) {
 
     useEffect(() => {
         // Create a new WebSocket connection to the server
+        // const newSocket = new WebSocket("wss://chessly.onrender.com");
         const newSocket = new WebSocket("ws://localhost:3000");
 
         // Set up event listeners for open, close, error, etc.
@@ -14,9 +15,10 @@ export function SocketContextProvider({ children }) {
             console.log("WebSocket connection established");
         };
 
-        newSocket.onclose = () => {
-            console.log("WebSocket connection closed");
-        };
+        newSocket.onclose = (event) => {
+            console.log("WebSocket connection closed:", event.code, event.reason);
+          };
+          
 
         newSocket.onerror = (error) => {
             console.error("WebSocket error:", error);

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { SocketContext } from '../context/SocketContext';
 import Piece from '../assets/Piece';
+import Board from '../components/Board';
 
 const Play = () => {
   const socket = useContext(SocketContext);
@@ -70,11 +71,11 @@ const Play = () => {
 
   const renderPiece = (col, rowIndex, colIndex) => {
     if (!col || !col.type) return null;
-
+      console.log(current)
     return (
       <span
         className={`text-3xl h-full w-full ${col.color === 'white' ? 'text-black' : 'text-white'}`}
-        draggable
+        draggable={col.color===current[0]?true:false}
         onDragStart={() => handleDragStart(col, rowIndex, colIndex)}
       >
         {<Piece type={getPieceSymbol(col.type, col.color)}/>}
@@ -127,25 +128,14 @@ const Play = () => {
 
   return (
     <div className='h-screen w-full bg-slate-300 flex justify-center items-center'>
-      <div className='h-[640px] w-[640px] flex flex-wrap'>
-        {board != null ? (
-          board.map((row, rowIndex) => (
-            row.map((col, colIndex) => (
-              <div 
-                key={`${rowIndex}-${colIndex}`} 
-                className={`h-[80px] w-[80px] ${getSquareColor(rowIndex, colIndex)} flex justify-center items-center`}
-                onDrop={() => handleDrop(rowIndex, colIndex)}
-                onDragOver={handleDragOver}
-              >
-                {renderPiece(col, rowIndex, colIndex)}
-              </div>
-            ))
-          ))
-        ) : (
-          <div className='flex justify-center items-center h-full w-full'>
-            <h2 className="text-2xl">Loading...</h2>
-          </div>
-        )}
+      <div className='h-[85%] w-[80%] bg-green-400 flex flex-col justify-evenly items-center '>
+      <Board getSquareColor={getSquareColor} handleDragOver={handleDragOver} handleDrop={handleDrop} renderPiece={renderPiece} board={board}/>
+      <div>
+        
+      </div>
+      <div>
+        
+      </div>
       </div>
     </div>
   );
