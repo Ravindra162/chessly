@@ -1,193 +1,136 @@
-import { Game } from "./game.js";
 import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import { Game } from "./game.js";
+import { createGameInDatabase } from "./actions/db.js";
 
-class GameManager {
-    games = [];
-    pendingUser;
-    users = [];
-    pen_ten_user;
+// user structure is like
+// {
+//     userId,
+//     username,
+//     socket,
+// }
 
-    constructor() {
-        this.games = [];
-        this.users = [];
-        this.pendingUser = null;
-        this.pen_ten_user = null;
-    }
 
-    addUser(socket) {
-        this.users.push(socket);
-        this.addHandler(socket);
-    }
+export class GameManager {
+  games = [];
+  users = [];
+  pendingTenPlayer = null;
 
-    removeUser(socket) {
-        this.users = this.users.filter(user => user !== socket);
-        this.games = this.games.filter(
-            game => game.player1 !== socket && game.player2 !== socket
-        );
-    }
+  constructor() {
+    this.games = [];
+    this.users = [];
+    this.pendingTenPlayer = null;
+  }
 
-    async createGameInDB(socket, userId) {
-        console.log("Creating game in DB with userId:", userId);
+  
+
+  addHandler(ws) {
+    ws.on("message", async (data) => {
+      const parsedData = JSON.parse(data);
+        console.log(parsedData);
+      if (parsedData.type == "create_10") {
+        if (this.pendingTenPlayer === null) {
+            this.pendingTenPlayer = {...parsedData.user,socket:ws};
+        } else {
+          // Create game in the database;
+          let currUser = {...parsedData.user,socket:ws};
+          const game = await createGameInDatabase(
+            this.pendingTenPlayer,
+            currUser
+          );
+
+          // If the game creation is successful, add the game instance
+          if (game) {
+            const newGame = new Game(this.pendingTenPlayer, currUser, game.id);
+            console.log(newGame)
+            this.games.push(newGame);
+
+            console.log(this.pendingTenPlayer)
+            let serverTime = Date.now();
+            // Notify both players about the new game with the game ID
+            this.pendingTenPlayer.socket.send(
+              JSON.stringify({
+                type: "game_created_10",
+                gameId: game.id,
+                color:"white",
+                board: newGame.game.board(),
+                startTime: serverTime + 5000,
+                
+              })
+            );
+
+            currUser.socket.send(
+              JSON.stringify({
+                type: "game_created_10",
+                gameId: game.id,
+                color:"black",
+                board: newGame.game.board(),
+                startTime: serverTime + 5000,
+                whiteTime: 600,
+                blackTime: 600,
+              })
+            );
+
+            // Reset pending player
+            this.pendingTenPlayer = null;
+          }
+        }
+      }
+      else if(parsedData.type == "move"){
+        // update the game state
+        try {
+        const game = this.games.find(game => game.id === parsedData.gameId);
+        game.game.move({from:parsedData.from,to:parsedData.to});
+        game.isStarted = true;
+        console.log(game.game.ascii());
+        let whitePlayer = game.white_player;
+          let blackPlayer = game.black_player;
+          console.log(game.game.inCheck())
+          console.log(game.game.isCheckmate())
+          let inCheck = game.game.inCheck();
+          let isCheckmate = game.game.isCheckmate();
+           
+            whitePlayer.socket.send(JSON.stringify({type:"update_timer",whiteTimer:parsedData.whiteTimer,blackTimer:parsedData.blackTimer,inCheck,isCheckmate,turn:game.game.turn(),inCheck:game.game.inCheck(),board:game.game.board(),move:{from:parsedData.from,to:parsedData.to}}));
+        
+            blackPlayer.socket.send(JSON.stringify({type:"update_timer",whiteTimer:parsedData.whiteTimer,blackTimer:parsedData.blackTimer,inCheck,isCheckmate,turn:game.game.turn(),board:game.game.board(), move:{from:parsedData.from,to:parsedData.to}}));
+          
+        } 
+        catch(e){
+          console.log("Invalid move");
+
+        }
+        
+      }
+      else if(parsedData.type == "get_game"){
+        const userId = parsedData.user.userId;
         
         try {
-            const penTenUser = this.pen_ten_user;
-            console.log("Pen_ten_user details:", penTenUser.userId);
-
-            // Create a new game instance in memory for real-time interaction
-            const game = new Game(penTenUser.socket, socket);
-            game.timeRemaining = {
-                white: 600,
-                black: 600,
-            };
-
-            // Store the game in the database with relations to `white` and `black` players
-            const newGame = await prisma.games.create({
-                data: {
-                    white: {
-                        connect: { id: penTenUser.userId },
-                    },
-                    black: {
-                        connect: { id: userId },
-                    },
-                    time: 600, // Total game time: 10 minutes in seconds
-                    time_remaining_white: 600,
-                    time_remaining_black: 600,
-                    pgn: '',
-                    board: game.board.board(), // Store the initial board state
-                },
-            });
-
-            console.log('New game created in the database:', newGame);
-
-            // Add the game to in-memory storage with the new game ID
-            game.id = newGame.id;
-            this.games.push(game);
-
-            // Send the game UUID and initial board state to both players
-            const gameData = {
-                type: 'game_created',
-                gameId: newGame.id,
-                board: game.board.board(),
-                timeRemaining: game.timeRemaining,
-            };
-            socket.send(
-                JSON.stringify({ ...gameData, color: 'black' }),
-                (err) => {
-                    if (err) {
-                        console.error('Error sending game start message to black player:', err);
-                    } else {
-                        console.log('Game start message successfully sent to black player.');
-                    }
-                }
-            );
-            penTenUser.socket.send(
-                JSON.stringify({ ...gameData, color: 'white' }),
-                (err) => {
-                    if (err) {
-                        console.error('Error sending game start message to white player:', err);
-                    } else {
-                        console.log('Game start message successfully sent to white player.');
-                    }
-                }
-            );
-            
-
-            console.log('Game start messages with board and time remaining sent to both players.');
-
-            // Reset pen_ten_user for the next game
-            this.pen_ten_user = null;
-
-        } catch (error) {
-            console.error('Error creating a game in the database:', error);
+          const game = this.games.find(game => game.id === parsedData.user.gameId);
+        console.log(game);
+          if(game.isStarted){
+            ws.send(JSON.stringify({msg:"Sorry, game was deleted as you were not active or page got reloaded"}));
+            return
+          }
+          // console.log(game);
+          const serverTime = Date.now();
+          
+          ws.send(JSON.stringify({
+            type: "fetched_game",
+            gameId: game.id,
+            color: game.white_player.userId === userId ? "white" : "black",
+            board: game.game.board(),
+            startTime: serverTime + 5000,
+            whiteTime: 600,
+            blackTime: 600,
+          }));
+          
+        } 
+        catch(e){
+          console.log(e)
         }
-    }
+      
+      }
+    });
+  }
 
-    addHandler(socket) {
-        socket.on('message', async (message) => {
-            const parsedMessage = JSON.parse(message.toString());
-            console.log("Received message:", parsedMessage);
-
-            if (parsedMessage.type === 'init_game') {
-                if (this.pendingUser === null) {
-                    this.pendingUser = socket;
-                    console.log('Pending user set.');
-                } else {
-                    const game = new Game(this.pendingUser, socket);
-                    this.games.push(game);
-                    console.log('Game created between:', this.pendingUser, socket);
-
-                    this.pendingUser.send(
-                        JSON.stringify({
-                            type: 'game_start',
-                            color: 'white',
-                            board: game.board.board(),
-                        })
-                    );
-                    socket.send(
-                        JSON.stringify({
-                            type: 'game_start',
-                            color: 'black',
-                            board: game.board.board(),
-                        })
-                    );
-                    console.log('Game start messages sent to both players.');
-                    this.pendingUser = null;
-                }
-            }
-
-            if (parsedMessage.type === 'move') {
-                const game = this.games.find(
-                    (game) => game.player1 === socket || game.player2 === socket
-                );
-                if (game) {
-                    game.makeMove(socket, parsedMessage.from, parsedMessage.to);
-                    await this.updateTimeAndBoardInDB(game);
-                }
-            }
-
-            if (parsedMessage.type === 'start_10') {
-                console.log("Start 10 message received with userId:", parsedMessage.userId);
-                if (this.pen_ten_user === null) {
-                    this.pen_ten_user = { userId: parsedMessage.userId, socket: socket };
-                    console.log("10 min user is now in pending:", this.pen_ten_user);
-                } else {
-                    const penTenUser = this.pen_ten_user; // Save reference to current pending user
-                    console.log("Creating game for 10-minute mode between users.");
-
-                    await this.createGameInDB(socket, parsedMessage.userId);
-
-                    // Check if penTenUser is still valid after game creation
-                    if (penTenUser) {
-                        console.log('Game created in the database between:', penTenUser.userId, parsedMessage.userId);
-                    } else {
-                        console.error('penTenUser was null after game creation.');
-                    }
-                }
-            }
-        });
-
-        socket.on('close', () => {
-            this.removeUser(socket);
-            console.log('User disconnected and removed from the game.');
-        });
-    }
-
-    async updateTimeAndBoardInDB(game) {
-        try {
-            await prisma.games.update({
-                where: { id: game.id },
-                data: {
-                    time_remaining_white: game.timeRemaining.white,
-                    time_remaining_black: game.timeRemaining.black,
-                    boardState: game.board.board(), // Update the current board state
-                },
-            });
-            console.log('Updated time and board state in the database for game:', game.id);
-        } catch (error) {
-            console.error('Error updating time and board state in the database:', error);
-        }
-    }
+  
 }
-
-export { GameManager };

@@ -2,15 +2,17 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// postgresql://neondb_owner:go8cKnLvfY1A@ep-fragrant-frog-a5s49ybt-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+// postgresql://ubtuqki8iwk4hzo2sb04:SYwuQcVWcY6oBhggGWkYbrsJnX1khN@bbtmguxsgukgoxilslot-postgresql.services.clever-cloud.com:50013/bbtmguxsgukgoxilslot
+// 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://neondb_owner:go8cKnLvfY1A@ep-fragrant-frog-a5s49ybt-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require"
+  url      = env("DATABASE_URL")
 }
 model User {
   id       Int     @id @default(autoincrement())
@@ -25,22 +27,21 @@ model User {
   winnerGames Games[] @relation("Winner")
 }
 model Games {
-  id                   String   @id @default(uuid())
-  white                User     @relation("WhiteGames", fields: [whiteId], references: [id])
-  whiteId              Int
-  black                User     @relation("BlackGames", fields: [blackId], references: [id])
-  blackId              Int
-  time                 Int      // Initial time for each player (e.g., 600 seconds for 10 minutes)
-  time_remaining_white Int      // Remaining time for the white player in seconds
-  time_remaining_black Int      // Remaining time for the black player in seconds
-  last_move_at         DateTime? // Timestamp of the last move to calculate time usage
-  winner               User?    @relation("Winner", fields: [winnerId], references: [id])
-  winnerId             Int?
-  pgn                  String   // Portable Game Notation of moves
-  board           Json     // Store the board state as a JSON object representing a 2D array
+  id            String   @id @default(uuid())
+  white         User     @relation("WhiteGames", fields: [whiteId], references: [id])
+  whiteId       Int
+  black         User     @relation("BlackGames", fields: [blackId], references: [id])
+  blackId       Int
+  time          Int      // Initial time for each player (e.g., 600 seconds for 10 minutes)
+  last_move_at  DateTime? // Timestamp of the last move, used to track time between moves
+  winner        User?    @relation("Winner", fields: [winnerId], references: [id])
+  winnerId      Int?
+  pgn           String   // Portable Game Notation of moves
+  board         Json     // Store the board state as a JSON object representing a 2D array
 
   @@index([whiteId], name: "index_whiteId")
   @@index([blackId], name: "index_blackId")
 }
+
 
 

@@ -2,17 +2,24 @@ import { createContext, useEffect, useState } from "react";
 
 export const SocketContext = createContext();
 
+import { LoadingContext } from "./LoadingContext";
+import { useContext } from "react";
+
 export function SocketContextProvider({ children }) {
     const [socket, setSocket] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         // Create a new WebSocket connection to the server
         // const newSocket = new WebSocket("wss://chessly.onrender.com");
+        // setIsLoading(true)
+        setIsLoading(true)
         const newSocket = new WebSocket("ws://localhost:3000");
 
         // Set up event listeners for open, close, error, etc.
         newSocket.onopen = () => {
             console.log("WebSocket connection established");
+            setIsLoading(false)
         };
 
         newSocket.onclose = (event) => {
@@ -34,7 +41,7 @@ export function SocketContextProvider({ children }) {
 
     return (
         <SocketContext.Provider value={socket}>
-            {children}
+            {isLoading ? <div>establishing real time connection</div> : children}
         </SocketContext.Provider>
     );
 }

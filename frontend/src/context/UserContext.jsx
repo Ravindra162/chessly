@@ -1,18 +1,21 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 export const UserContext = createContext();
 import { ToastContainer, toast } from 'react-toastify';
+import { LoadingContext } from "./LoadingContext";
 import 'react-toastify/dist/ReactToastify.css';
 
 export function UserContextProvider({ children }) {
+    const navigate = useNavigate();
+    const {isLoading,setIsLoading} = useContext(LoadingContext);
     const [user, setUser] = useState("");
     const fetchSuccess = () => toast("User fetched successfully");
     const fetchFail = () => toast("Fetch failed");
 
     useEffect(() => {
         console.log("useEffect triggered in UserContextProvider");
-
+        setIsLoading(true);
         const fetchUser = () => {
             const token = localStorage.getItem('auth_token');
             console.log("Auth token:", token);
@@ -32,13 +35,19 @@ export function UserContextProvider({ children }) {
             })
             .then((response) => {
                 console.log("User data fetched:", response);
+                setTimeout(()=>{
+                    setIsLoading(false);
+                },1000)
                 setUser(response.data.user);
                 fetchSuccess();
             })
             .catch((error) => {
-                console.error('Error fetching user:', error);
-                setUser(null);
+                navigate("/login");
                 fetchFail();
+                setUser(null);
+               
+                console.error('Error fetching user:', error);
+                
             });
         };
     
@@ -48,7 +57,12 @@ export function UserContextProvider({ children }) {
     return (
         <UserContext.Provider value={{ user }}>
             <ToastContainer />
-            {children}
+            {isLoading?
+            <div className="h-screen w-full bg-black flex justify-center items-center">
+                <div>
+                    <h1 className="text-white">Loading.....</h1>
+                </div>
+            </div>:children}
         </UserContext.Provider>
     );
 }

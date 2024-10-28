@@ -6,3 +6,8 @@ body {
     background-image: url("./assets/chess_bg.png");
     border-image-repeat: norepeat;
 }
+.home {
+    background-image: url("./assets/bg.webp");
+    background-repeat: no-repeat;
+    background-size: cover;
+}

@@ -8,6 +8,18 @@ const prisma = new PrismaClient();
 
 const router = express.Router();
 
+const checkDatabaseConnection = async () => {
+  try {
+    await prisma.$connect();
+    console.log('Database connected successfully.');
+    return true;
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    return false;
+  }
+};
+
+
 router.post('/register', async (req, res) => {
     const { email, username, password } = req.body;
   
@@ -94,5 +106,5 @@ router.post('/register', async (req, res) => {
   });
 
   
-
+export {checkDatabaseConnection}
 export default router;

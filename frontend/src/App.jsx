@@ -31,8 +31,8 @@ const App = () => {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/room" element={<Room />} />
-                    <Route path="/random" element={<Play />} />
-                    <Route path='/game/:gameId' element={<PlayTen />} />
+                    <Route path="/game/:id" element={<Play />} />
+                    <Route path='/ten' element={<PlayTen />} />
                     <Route path='/pgn' element={<Png />} />
                   </Routes>
                 </SocketContextProvider>
