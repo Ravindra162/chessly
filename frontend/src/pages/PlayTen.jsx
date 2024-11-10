@@ -211,6 +211,7 @@ const PlayTen = () => {
     const move = chessGame.move({ from: fromCoord, to: toCoord });
     if (move) {
 
+        
       if(chessGame.isCheckmate()){
         setIsCheckMate(true);
           
