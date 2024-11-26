@@ -7,7 +7,7 @@ function Matches() {
     const [games,setGames] = useState([])
 
     useEffect(()=>{
-        axios.get("http://localhost:3000/user/games",{
+        axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/user/games`,{
             headers:{
                 'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
             }

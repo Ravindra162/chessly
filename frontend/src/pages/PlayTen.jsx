@@ -215,7 +215,7 @@ const PlayTen = () => {
       if(chessGame.isCheckmate()){
         setIsCheckMate(true);
           
-          axios.post("http://localhost:3000/user/game/update/winnerId",{gameId,winnerId:user.user.id,pgn:chessGame.pgn()},{
+          axios.post(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/user/game/update/winnerId`,{gameId,winnerId:user.user.id,pgn:chessGame.pgn()},{
             headers:{
               'Authorization':`Bearer ${localStorage.getItem("auth_token")}`
             }

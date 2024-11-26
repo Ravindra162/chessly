@@ -28,7 +28,7 @@ export function UserContextProvider({ children }) {
             }
     
             // Make the axios request and handle the response using .then() and .catch()
-            axios.get('http://localhost:3000/user/user', {
+            axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/user/user`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },

@@ -19,7 +19,7 @@ const Login = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:3000/auth/login', { email, password });
+      const response = await axios.post(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/auth/login`, { email, password });
 
       if (response.status === 200) {
         const { token } = response.data;
