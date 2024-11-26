@@ -10,10 +10,7 @@ This is a full-stack web application for playing chess online, featuring real-ti
 ## 🚀 Tech Stack
 
 - **Frontend**: 
-  - React
-  - Vite
-  - React Router
-  - WebSocket for real-time communication
+  - React.js
 
 - **Backend**:
   - Node.js
