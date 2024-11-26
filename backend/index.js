@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js'
 import { checkDatabaseConnection } from './routes/auth.js';
 const app = express();
+const port = process.env.PORT || 3000
 app.use(cors({
   origin: '*',
 }));
@@ -41,6 +42,6 @@ wss.on('connection', (ws) => {
 
 
 
-server.listen(3000, () => {
+server.listen(port, () => {
   console.log('Server is running on port 3000');
 });
