@@ -113,6 +113,10 @@ cd backend
 npm run test
 ```
 
+## Chess view (Multiplayer)
+![Image to be displayed](frontend/public/image.png)
+
+
 ## 🚧 Deployment
 
 ### Frontend
