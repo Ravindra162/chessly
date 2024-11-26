@@ -1,6 +1,4 @@
-Here's the text of the README.md file:
 
-```markdown
 # Chess Multiplayer Web Application
 
 ## 🎲 Project Overview
@@ -132,18 +130,3 @@ npm run test
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
-## 🤝 Contact
-
-Your Name - your.email@example.com
-
-Project Link: [https://github.com/your-username/chess-multiplayer](https://github.com/your-username/chess-multiplayer)
-```
-
-You can copy this text directly into a README.md file in your project's root directory. Remember to replace placeholders like `your-username`, `Your Name`, and `your.email@example.com` with your actual information.
-
-Would you like me to help you customize any part of the README?
