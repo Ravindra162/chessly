@@ -20,6 +20,12 @@ app.use("/auth", authRoutes);
 app.use("/user",userRoutes)
 
 
+app.get("/",(req,res)=>{
+  res.json({
+    msg:"Chess backend"
+  })
+})
+
 
 const gameManager = new GameManager();
 
