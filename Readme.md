@@ -29,7 +29,7 @@ Before you begin, ensure you have the following installed:
 
 ### Clone the Repository
 ```bash
-git clone https://github.com/your-username/chess-multiplayer.git
+git clone https://github.com/Ravindra162/chessly.git
 cd chess-multiplayer
 ```
 
