@@ -17,7 +17,8 @@ const Register = () => {
     }
 
     try {
-      const response = await axios.post(`http://localhost:3000/auth/register`, {
+      const response = await axios.post(`https://chessly-1.onrender.com
+/auth/register`, {
         email,
         username,
         password,

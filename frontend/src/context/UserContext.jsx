@@ -28,7 +28,8 @@ export function UserContextProvider({ children }) {
             }
     
             // Make the axios request and handle the response using .then() and .catch()
-            axios.get(`http://localhost:3000/user/user`, {
+            axios.get(`https://chessly-1.onrender.com
+/user/user`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },

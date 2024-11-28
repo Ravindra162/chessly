@@ -272,7 +272,8 @@ const Play = () => {
         console.log("Pgn is not begin printeddddddd")
         console.log(chessGame.pgn())
           
-          axios.post(`http://localhost:3000/user/game/update/winnerId`,{gameId,winnerId:user.user.id,pgn:chessGame.pgn()},{
+          axios.post(`https://chessly-1.onrender.com
+/user/game/update/winnerId`,{gameId,winnerId:user.user.id,pgn:chessGame.pgn()},{
             headers:{
               'Authorization':`Bearer ${localStorage.getItem("auth_token")}`
             }
@@ -388,7 +389,7 @@ const Play = () => {
             row.map((piece, colIndex) => (
               <div 
                 key={`${rowIndex}-${colIndex}`} 
-                className={`w-[40px] h-[40px] md:w-[40px] md:h-[40px] flex items-center justify-center text-2xl ${
+                className={`w-[40px] h-[40px] md:w-[80px] md:h-[80px] flex items-center justify-center text-2xl ${
                   (rowIndex + colIndex) % 2 === 0 ? 'bg-gray-200' : 'bg-gray-400'
                 } ${kingInCheck && kingInCheck.row === rowIndex && kingInCheck.col === colIndex ? 'bg-red-500' : ''} ${
                   selectedSquare && selectedSquare.row === rowIndex && selectedSquare.col === colIndex ? 'bg-yellow-500' : ''
