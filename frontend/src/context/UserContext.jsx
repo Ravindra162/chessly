@@ -28,7 +28,7 @@ export function UserContextProvider({ children }) {
             }
     
             // Make the axios request and handle the response using .then() and .catch()
-            axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/user/user`, {
+            axios.get(`http://localhost:3000/user/user`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -39,6 +39,7 @@ export function UserContextProvider({ children }) {
                     setIsLoading(false);
                 },1000)
                 setUser(response.data.user);
+                console.log(response.data.user)
                 fetchSuccess();
             })
             .catch((error) => {

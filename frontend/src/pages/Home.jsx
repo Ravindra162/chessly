@@ -40,12 +40,12 @@ const Home = () => {
     <div className='h-screen w-full  home'>
       <Navbar/>
       <div className='h-[92%] w-full bg--300 main'>
-          <div className='h-1/2 w-full flex justify-center items-center'>
+          <div className='h-1/2 w-full flex flex-col gap-5 justify-center items-center'>
 
-         <div className='text-white block'>
-         {User===''?"Loading.....":User.user.email}</div>
+         <div className='text-white block font-bold text-2xl'>
+         {User===''?"Loading.....":User.user.username}</div>
          <Button onClick={handleMatchMaking} className='bg-green-400'>
-            Play random
+            Play random (10 Min Match)
           </Button>
           </div>
           

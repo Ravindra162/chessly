@@ -14,7 +14,7 @@ export function SocketContextProvider({ children }) {
         // const newSocket = new WebSocket("wss://chessly.onrender.com");
         // setIsLoading(true)
         setIsLoading(true)
-        const newSocket = new WebSocket("ws://chessly-1.onrender.com");
+        const newSocket = new WebSocket("ws://localhost:3000");
 
         // Set up event listeners for open, close, error, etc.
         newSocket.onopen = () => {

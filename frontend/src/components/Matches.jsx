@@ -1,13 +1,15 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { useEffect, useState } from 'react'
 import { Button } from '@nextui-org/react'
+import { UserContext } from '../context/UserContext'
 import axios from "axios"
 function Matches() {
     
     const [games,setGames] = useState([])
+    const user = useContext(UserContext)
 
     useEffect(()=>{
-        axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/user/games`,{
+        axios.get(`http://localhost:3000/user/games`,{
             headers:{
                 'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
             }
@@ -27,17 +29,17 @@ function Matches() {
 
   return (
     <div className='h-1/2 w-full bg- flex flex-col justify-center items-center'>
-        <h1 className='text-3xl text-white font-bold '>
+        <h1 className='text-xl md:text-3xl text-white font-bold '>
             <u>    Matches</u>
         </h1>
-        <div className='h-[90%] w-2/3 overflow-y-scroll p-5 no-scrollbar'>
+        <div className='h-[90%] w-[90%] md:w-2/3 overflow-y-scroll p-5 no-scrollbar'>
         <div className='h-full w-full flex flex-col  items-center'>
         {       
                 games.length?games.map((game,index)=>{
                     return (<div className='h-[60px] w-full flex flex-col justify-between' key={index}><div className='h-[60px] w-full rounded-lg flex justify-between ' >
 
-                                <div className='me h-full w-1/3 flex justify-center items-center text-white font-semibold  text-xl'>{game.whiteUsername+" (w)"}</div>
-                                <div className='opponent h-full flex justify-center items-center text-white font-semibold w-1/3  text-xl'>{game.blackUsername+" (b)"}</div>
+                                <div className={` h-full md:w-1/3 flex justify-center items-center text-white ${game.winnerId!==user.user.id?'text-green-400':'text-red-700'} font-semibold text-sm  md:text-xl`}>{game.whiteUsername+" (w)"}</div>
+                                <div className={`opponent h-full flex justify-center items-center text-white ${game.winnerId===user.user.id?'text-green-400':'text-red-700'} font-semibold w-1/3  text-sm md:text-xl`}>{game.blackUsername+" (b)"}</div>
                                 <Button 
                                 onClick={()=>handleCopyPgn(game.pgn)}
                                 className='me h-[90%] w-[10%] flex justify-center items-center bg-white text-black'>

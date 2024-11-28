@@ -9,9 +9,6 @@ async function createGameInDatabase(whitePlayer, blackPlayer) {
           blackId: blackPlayer.userId,
           time: 600, // Example time control (10 minutes per player)
           pgn: "",
-          board: JSON.stringify([
-            // Initialize the board with starting positions
-          ]),
         },
       });
       return game;
@@ -21,4 +18,24 @@ async function createGameInDatabase(whitePlayer, blackPlayer) {
     }
   }
 
-  export {createGameInDatabase}
+  async function updateGameInDatabase(gameId,winnerId,pgn){
+    try {
+      console.log("Updating game in database with winnerId:", winnerId);
+      const game = await prisma.games.update({
+        where: {
+          id: gameId,
+        },
+        data: {
+          pgn: pgn,
+          winnerId: winnerId,
+        },
+      });
+
+      console.log("Game updated in database:", game);
+    }
+    catch(error){
+      console.error("Error updating game in database:", error);
+    }
+  }
+
+  export {createGameInDatabase, updateGameInDatabase}

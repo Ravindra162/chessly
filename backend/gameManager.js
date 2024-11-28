@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Game } from "./game.js";
-import { createGameInDatabase } from "./actions/db.js";
+import { createGameInDatabase, updateGameInDatabase } from "./actions/db.js";
 
 // user structure is like
 // {
@@ -54,6 +54,8 @@ export class GameManager {
                 color:"white",
                 board: newGame.game.board(),
                 startTime: serverTime + 5000,
+                whiteTime: 30,
+                blackTime: 30,
                 
               })
             );
@@ -65,8 +67,8 @@ export class GameManager {
                 color:"black",
                 board: newGame.game.board(),
                 startTime: serverTime + 5000,
-                whiteTime: 600,
-                blackTime: 600,
+                whiteTime: 30,
+                blackTime: 30,
               })
             );
 
@@ -86,8 +88,12 @@ export class GameManager {
           let blackPlayer = game.black_player;
           console.log(game.game.inCheck())
           console.log(game.game.isCheckmate())
+
           let inCheck = game.game.inCheck();
           let isCheckmate = game.game.isCheckmate();
+
+          game.whiteTimer = parsedData.whiteTimer
+          game.blackTimer = parsedData.blackTimer
            
             whitePlayer.socket.send(JSON.stringify({type:"update_timer",whiteTimer:parsedData.whiteTimer,blackTimer:parsedData.blackTimer,inCheck,isCheckmate,turn:game.game.turn(),inCheck:game.game.inCheck(),board:game.game.board(),move:{from:parsedData.from,to:parsedData.to}}));
         
@@ -102,12 +108,37 @@ export class GameManager {
       }
       else if(parsedData.type == "get_game"){
         const userId = parsedData.user.userId;
+        console.log(parsedData)
         
         try {
           const game = this.games.find(game => game.id === parsedData.user.gameId);
-        console.log(game);
+
+          const currentUsername = userId === game.white_player.userId ? game.white_player.username : game.black_player.username;
+          console.log(currentUsername)
+          const opponentUsername = userId === game.white_player.userId ? game.black_player.username : game.white_player.username;
+          console.log(opponentUsername)
+        // console.log(game);
           if(game.isStarted){
-            ws.send(JSON.stringify({msg:"Sorry, game was deleted as you were not active or page got reloaded"}));
+            console.log("started game")
+            // ws.send(JSON.stringify({msg:"Sorry, game was deleted as you were not active or page got reloaded"}));
+            // update the the current color player's socket value
+            game.white_player.socket = game.white_player.userId === userId ? ws : game.white_player.socket;
+            game.black_player.socket = game.black_player.userId === userId ? ws : game.black_player.socket;
+
+            ws.send(JSON.stringify({
+              type: "existing_game",
+              gameId:game.id,
+              color: game.white_player.userId === userId ? "white": "black",
+              whiteTime:game.whiteTimer,
+              blackTime:game.blackTimer,
+              board: game.game.board(),
+              startTime: Date.now(),
+              pgn: game.game.pgn(),
+              currentUsername,
+              opponentUsername
+
+
+            }))
             return
           }
           // console.log(game);
@@ -121,6 +152,9 @@ export class GameManager {
             startTime: serverTime + 5000,
             whiteTime: 600,
             blackTime: 600,
+            currentUsername,
+            opponentUsername
+            
           }));
           
         } 
@@ -128,6 +162,33 @@ export class GameManager {
           console.log(e)
         }
       
+      }
+      else if(parsedData.type == "end_game"){
+        // const {reason} = parsedData
+        console.log(parsedData)
+        const game = this.games.find(game => game.id === parsedData.gameId);
+        console.log(game)
+        const whitePlayerSocket = game.white_player.socket
+        const blackPlayerSocket = game.black_player.socket
+        console.log(parsedData.pgn)
+        let winnerId = null;
+        const userId = parsedData.userId;
+        
+        if(game.white_player.userId !== userId){
+          winnerId = game.white_player.userId;
+          await updateGameInDatabase(parsedData.gameId,winnerId,game.game.pgn());
+          whitePlayerSocket.send(JSON.stringify({type:"end_game",reason:"Time is up for black , redrecting to home page, and you won the game"}));
+        }
+        else {
+          winnerId = game.black_player.userId;
+          await updateGameInDatabase(parsedData.gameId,winnerId,game.game.pgn());
+          blackPlayerSocket.send(JSON.stringify({type:"end_game",reason:"Time is up for white, redirecting to home page and you won the game"}));
+          
+        }
+        
+
+        
+        
       }
     });
   }

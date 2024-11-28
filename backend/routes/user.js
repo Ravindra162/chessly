@@ -166,13 +166,15 @@ router.get("/games/", authMiddleware, async (req, res) => {
       },
     });
 
-    const aggregatedData = games.map(game => ({
+    let aggregatedData = games.map(game => ({
       id: game.id,
       winnerId: game.winnerId,
       pgn: game.pgn,
       whiteUsername: game.white.username,
       blackUsername: game.black.username,
     }));
+    // reverse aggregated data
+    aggregatedData = aggregatedData.reverse();
     console.log(aggregatedData)
 
     res.status(200).json({ games: aggregatedData });
