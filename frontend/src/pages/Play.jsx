@@ -108,6 +108,9 @@ const Play = () => {
           setCurrentUsername(parsedData.currentUsername);
           setOpponentUsername(parsedData.opponentUsername);
           chessGame.loadPgn(parsedData.pgn)
+          console.log(chessGame.pgn())
+          // console.log(chessGame.turn())
+          setIsMyTurn(chessGame.turn() === playerColor[0]);
         }
         else if (parsedData.type === 'update_timer') {
           if (parsedData.turn === playerColor[0]) {
@@ -272,7 +275,7 @@ const Play = () => {
         console.log("Pgn is not begin printeddddddd")
         console.log(chessGame.pgn())
           
-          axios.post(`https://chessly-1.onrender.com
+          axios.post(`http://localhost:5000
 /user/game/update/winnerId`,{gameId,winnerId:user.user.id,pgn:chessGame.pgn()},{
             headers:{
               'Authorization':`Bearer ${localStorage.getItem("auth_token")}`
@@ -373,6 +376,18 @@ const Play = () => {
     );
   }
 
+  const handleReject = () => {
+    socket.send(JSON.stringify({
+      type: 'end_game',
+      reason: 'resign',
+      userId: user.user.id,
+      gameId,
+      pgn:chessGame.pgn()
+    }));
+    alert("You resigned the game")
+    navigate("/")
+  }
+
   return (
     <div className='flex flex-col items-center justify-center h-screen bg-gray-900'>
       <div className='Board-with-timer flex flex-col h-[900px] w-[900px] items-center justify-center bg-black gap-5'>
@@ -407,6 +422,10 @@ const Play = () => {
           <div className='my-timer h-full w-[30%] bg-green-500 rounded-lg flex items-center justify-center text-white text-xl'>
             {formatTime(myTimer)}
           </div>
+          <button
+          className='reject-button h-full w-[20%] bg-red-500 rounded-lg flex items-center justify-center text-white text-xl'
+          onClick={handleReject}
+        >Resign</button>
           <div className='opponent-pieces h-full basis-1/2 w-[30%] bg-green-500 rounded-lg flex items-center justify-center text-white text-xl'>
             {currentUsername===''?"Loading....":currentUsername}
           </div>

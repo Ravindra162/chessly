@@ -7,7 +7,7 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js'
 import { checkDatabaseConnection } from './routes/auth.js';
 const app = express();
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 5000
 app.use(cors({
   origin: '*',
 }));

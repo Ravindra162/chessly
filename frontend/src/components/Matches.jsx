@@ -9,7 +9,7 @@ function Matches() {
     const user = useContext(UserContext)
 
     useEffect(()=>{
-        axios.get(`https://chessly-1.onrender.com
+        axios.get(`http://localhost:5000
 /user/games`,{
             headers:{
                 'Authorization': 'Bearer ' + localStorage.getItem('auth_token')

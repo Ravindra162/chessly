@@ -19,7 +19,7 @@ const Login = () => {
     }
 
     try {
-      const response = await axios.post(`https://chessly-1.onrender.com
+      const response = await axios.post(`http://localhost:5000
 /auth/login`, { email, password });
 
       if (response.status === 200) {

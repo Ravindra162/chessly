@@ -164,15 +164,24 @@ export class GameManager {
       
       }
       else if(parsedData.type == "end_game"){
-        // const {reason} = parsedData
+        const {reason} = parsedData
+        
         console.log(parsedData)
         const game = this.games.find(game => game.id === parsedData.gameId);
-        console.log(game)
+        // console.log(game)
         const whitePlayerSocket = game.white_player.socket
         const blackPlayerSocket = game.black_player.socket
         console.log(parsedData.pgn)
         let winnerId = null;
         const userId = parsedData.userId;
+        if(reason === "resign"){
+          console.log("About to resign")
+          const winnerId = (userId===game.white_player.userId?game.black_player.userId:white_player.userId)
+          const opponentSocket = userId===game.white_player.userId?blackPlayerSocket:whitePlayerSocket
+          await updateGameInDatabase(parsedData.gameId,winnerId,game.game.pgn());
+          opponentSocket.send(JSON.stringify({type:"end_game",reason:"Opponent resigned"}))
+          return
+        }
         
         if(game.white_player.userId !== userId){
           winnerId = game.white_player.userId;

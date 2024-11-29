@@ -175,7 +175,7 @@ router.get("/games/", authMiddleware, async (req, res) => {
     }));
     // reverse aggregated data
     aggregatedData = aggregatedData.reverse();
-    console.log(aggregatedData)
+    // console.log(aggregatedData)
 
     res.status(200).json({ games: aggregatedData });
   } catch (error) {
