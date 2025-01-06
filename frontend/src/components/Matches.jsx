@@ -1,68 +1,81 @@
-import React, { useContext } from 'react'
-import { useEffect, useState } from 'react'
-import { Button } from '@nextui-org/react'
-import { UserContext } from '../context/UserContext'
-import axios from "axios"
-function Matches() {
-    
-    const [games,setGames] = useState([])
-    const user = useContext(UserContext)
+import React, { useContext, useEffect, useState } from 'react';
+import { Button } from '@nextui-org/react';
+import { UserContext } from '../context/UserContext';
+import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Loading from './Loading';
 
-    useEffect(()=>{
-        axios.get(`http://localhost:5000
-/user/games`,{
-            headers:{
-                'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
-            }
-        }).then(res=>{
-            console.log(res);
-            setGames(res.data.games)
-        })
-        .catch(err=>{
-            console.log(err)
-        })
-    },[])
+const Matches = () => {
+  const [games, setGames] = useState([]);
+  const user = useContext(UserContext);
+  const [isLoading, setIsLoading] = useState(false);
 
-    const handleCopyPgn = (pgn) => {
-        navigator.clipboard.writeText(pgn)
-        alert("Pgn copied to clipboard")
-    }
+  useEffect(() => {
+    axios.get('http://localhost:5000/user/games', {
+      headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+      }
+    })
+    .then(res => 
+        {
+            setIsLoading(true);
+            setGames(res.data.games);
+            setIsLoading(false);
+        
+        }
+    )
+    .catch(err => console.error(err));
+  }, []);
+
+  const handleCopyPgn = (pgn) => {
+    navigator.clipboard.writeText(pgn);
+    toast.success("PGN copied to clipboard");
+  };
 
   return (
-    <div className='h-1/2 w-full bg- flex flex-col justify-center items-center'>
-        <h1 className='text-xl md:text-3xl text-white font-bold '>
-            <u>    Matches</u>
-        </h1>
-        <div className='h-[90%] w-[90%] md:w-2/3 overflow-y-scroll p-5 no-scrollbar'>
-        <div className='h-full w-full flex flex-col bg-[#171616c9] rounded-xl p-8  items-center'>
-        {       
-                games.length?games.map((game,index)=>{
-                    return (<div className='h-[60px] w-full flex flex-col justify-between items-center ' key={index}><div className='h-[60px] w-full rounded-lg flex justify-between ' >
-
-                                <div className={` h-full md:w-1/3 flex justify-center items-center  ${game.winnerId!==user.user.id?'text-green-400':'text-red-700'} font-semibold text-sm  md:text-xl`}>{game.whiteUsername+" (w)"}</div>
-                                <div className={`opponent h-full md:w-1/3 flex justify-center items-center  ${game.winnerId===user.user.id?'text-green-400':'text-red-700'} font-semibold w-1/3  text-sm md:text-xl`}>{game.blackUsername+" (b)"}</div>
-                                <Button 
-                                onClick={()=>handleCopyPgn(game.pgn)}
-                                className='me h-[90%] w-[10%] flex justify-center items-center bg-white text-black'>
-                                Copy Pgn
-                                </Button>
-                                
-
-                            </div>
-                            <div className='h-[2px] w-full my-3 bg-white'>
-
-                            </div>
-                            </div>)
-                }):
-                <><div className='text-center text-white'>
-                    No games found  
-                </div></>
-            }
+    <div className="w-full max-w-4xl mx-auto">
+       
+      <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-8">
+        Recent Matches
+      </h2>
+      {isLoading ? <Loading />:
+        <div className="bg-[#111] rounded-xl shadow-lg shadow-[#16A34A]/10 overflow-hidden">
+        <div className="divide-y divide-gray-800">
+          {games.length ? (
+            games.map((game, index) => (
+              <div key={index} className="p-4 hover:bg-black/30 transition-colors">
+                <div className="flex items-center justify-between gap-4">
+                  <div className={`flex-1 text-center ${game.winnerId !== user.user.id ? 'text-[#16A34A]' : 'text-red-500'}`}>
+                    {game.whiteUsername} (W)
+                  </div>
+                  <div className="text-gray-400">vs</div>
+                  <div className={`flex-1 text-center ${game.winnerId === user.user.id ? 'text-[#16A34A]' : 'text-red-500'}`}>
+                    {game.blackUsername} (B)
+                  </div>
+                  <Button 
+                    onClick={() => handleCopyPgn(game.pgn)}
+                    className="bg-[#16A34A]/20 hover:bg-[#16A34A]/30 text-[#16A34A] px-4"
+                  >
+                    Copy PGN
+                  </Button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="p-8 text-center text-gray-400">
+              No matches found
+            </div>
+          )}
         </div>
-           
-        </div>
+      </div>
+      
+      }
+      
+      
+      <ToastContainer theme="dark" />
     </div>
-  )
-}
+  );
+};
 
-export default Matches
+export default Matches;

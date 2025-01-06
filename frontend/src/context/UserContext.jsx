@@ -5,6 +5,7 @@ export const UserContext = createContext();
 import { ToastContainer, toast } from 'react-toastify';
 import { LoadingContext } from "./LoadingContext";
 import 'react-toastify/dist/ReactToastify.css';
+import Loading from "../components/Loading";
 
 export function UserContextProvider({ children }) {
     const navigate = useNavigate();
@@ -58,13 +59,14 @@ export function UserContextProvider({ children }) {
 
     return (
         <UserContext.Provider value={{ user }}>
-            <ToastContainer />
-            {isLoading?
+            {/* {isLoading?
             <div className="h-screen w-full bg-black flex justify-center items-center">
                 <div>
                     <h1 className="text-white">Loading.....</h1>
                 </div>
-            </div>:children}
+            </div>:children} */}
+            {isLoading?
+            <Loading/>:children}
         </UserContext.Provider>
     );
 }

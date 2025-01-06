@@ -10,6 +10,7 @@ import Register from './pages/auth/Register'
 import Login from './pages/auth/Login'
 import { UserContextProvider } from './context/UserContext'
 import { SocketContextProvider } from './context/SocketContext'
+import Landing from './pages/landing/Landing'
 
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = localStorage.getItem('auth_token') // Or however you check if a user is logged in
@@ -22,6 +23,7 @@ const App = () => {
       <Routes>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path='/' element={<Landing/>} />
         <Route
           path="/*"
           element={
@@ -29,7 +31,7 @@ const App = () => {
               <UserContextProvider>
                 <SocketContextProvider>
                   <Routes>
-                    <Route path="/" element={<Home />} />
+                    <Route path="/home" element={<Home />} />
                     <Route path="/room" element={<Room />} />
                     <Route path="/game/:id" element={<Play />} />
                     <Route path='/ten' element={<PlayTen />} />

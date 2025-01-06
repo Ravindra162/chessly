@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Button } from "@nextui-org/react";
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Register = () => {
   const [email, setEmail] = useState('');
@@ -11,73 +13,93 @@ const Register = () => {
   const navigate = useNavigate();
 
   const handleRegister = async () => {
+    if (!email || !username || !password || !confirmPassword) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    
     if (password !== confirmPassword) {
-      alert('Passwords do not match');
+      toast.error('Passwords do not match');
       return;
     }
 
     try {
-      const response = await axios.post(`http://localhost:5000
-/auth/register`, {
+      const response = await axios.post('http://localhost:5000/auth/register', {
         email,
         username,
-        password,
+        password
       });
 
       if (response.status === 201) {
-        alert('Registration successful!');
-        navigate('/random'); // Redirect to /random on success
+        toast.success('Registration successful!');
+        setTimeout(() => navigate('/login'), 1000);
       }
     } catch (error) {
-      if (error.response && error.response.data) {
-        alert(error.response.data.message);
-      } else {
-        console.error('Error registering:', error);
-        alert('An error occurred during registration. Please try again.');
-      }
+      toast.error(error.response?.data?.message || 'Registration failed');
     }
   };
 
   return (
-    <div id='auth' className='h-screen w-full bg-[#171717ec] flex flex-col justify-center items-center gap-5'>
-      <h1 className='text-3xl text-white'>Register and Play now</h1>
-      <div className='form h-1/2 sm:w-[70%] md:w-[45%] w-[75%] border-2 border-[#72a244] rounded-2xl shadow-md shadow-[#72a244] flex flex-col justify-center items-center gap-5 bg-[#0D302C]'>
-        <input 
-          className='h-[50px] w-[90%] bg-[#00000081] border-2 border-[#72a244] rounded-md text-white text-md text-center' 
-          type='email' 
-          placeholder='Enter your email' 
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input 
-          className='h-[50px] w-[90%] bg-[#00000081] border-2 border-[#72a244] rounded-md text-white text-md text-center' 
-          type='text' 
-          placeholder='Enter your username' 
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <input 
-          className='h-[50px] w-[90%] bg-[#00000081] border-2 border-[#72a244] rounded-md text-white text-md text-center' 
-          type='password' 
-          placeholder='Enter your password' 
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <input 
-          className='h-[50px] w-[90%] bg-[#00000081] border-2 border-[#72a244] rounded-md text-white text-md text-center' 
-          type='password' 
-          placeholder='Confirm your password' 
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-        />
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center">
+          <h2 className="text-4xl font-bold text-white mb-2">Create Account</h2>
+          <p className="text-gray-400">Join the chess community today</p>
+        </div>
         
-        <Button className='bg-[#72a244]' onClick={handleRegister}>
-          Register
-        </Button>
-        <span>
-          <Link className='text-white' to="/login">Already registered?</Link>
-        </span>
-      </div> 
+        <div className="bg-[#111] p-8 rounded-xl border border-[#16A34A]/20 shadow-lg shadow-[#16A34A]/10">
+          <div className="space-y-4">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 bg-black/50 border border-[#16A34A]/30 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-[#16A34A] transition"
+              placeholder="Email address"
+            />
+            
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full px-4 py-3 bg-black/50 border border-[#16A34A]/30 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-[#16A34A] transition"
+              placeholder="Username"
+            />
+
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 bg-black/50 border border-[#16A34A]/30 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-[#16A34A] transition"
+              placeholder="Password"
+            />
+
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-4 py-3 bg-black/50 border border-[#16A34A]/30 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-[#16A34A] transition"
+              placeholder="Confirm password"
+            />
+
+            <Button
+              onClick={handleRegister}
+              className="w-full bg-[#16A34A] hover:bg-[#15803d] text-white py-3 rounded-lg font-medium transition-colors"
+            >
+              Create Account
+            </Button>
+          </div>
+
+          <div className="mt-6 text-center">
+            <Link to="/login" className="text-[#16A34A] hover:text-[#15803d] transition-colors">
+              Already have an account? Sign in
+            </Link>
+          </div>
+        </div>
+      </div>
+      <ToastContainer 
+        position="top-right"
+        theme="dark"
+      />
     </div>
   );
 };

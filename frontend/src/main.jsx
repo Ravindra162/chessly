@@ -9,7 +9,7 @@ createRoot(document.getElementById('root')).render(
   <NextUIProvider>
     <LoadingContextProvider>
   <>
-    <App />
+    <App/>
   </>
   </LoadingContextProvider>
   </NextUIProvider>,

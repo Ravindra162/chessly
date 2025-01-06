@@ -1,61 +1,47 @@
-import { Button } from '@nextui-org/react'
-import React, { useEffect, useState } from 'react'
-import Navbar from "../components/Navbar"
-import { useContext } from 'react'
-import { UserContext } from '../context/UserContext'
-import {Card, CardFooter, Image} from "@nextui-org/react";
-import { useNavigate } from 'react-router-dom'
-import { SocketContext } from '../context/SocketContext'
-import Matches from '../components/Matches'
+import React, { useContext, useEffect, useState } from 'react';
+import { Button } from '@nextui-org/react';
+import Navbar from "../components/Navbar";
+import { UserContext } from '../context/UserContext';
+import { SocketContext } from '../context/SocketContext';
+import { useNavigate } from 'react-router-dom';
+import Matches from '../components/Matches';
+
 const Home = () => {
-  const [User, setUser] = useState("")
-  const user = useContext(UserContext)
-  const socket = useContext(SocketContext)
-  const navigate = useNavigate()
-  useEffect(()=>{
-      console.log("User data:", user)
-      if(user!==null)
-      setUser(user)
-  },[user])
-  // useEffect(()=>{
-  //   if(!socket)return
-  //   socket.onmessage = (data) => {
-  //     console.log(JSON.parse(data.data))
-  //     const parsedData = JSON.parse(data.data)
-  //     if(parsedData.type==="game_created"){
-  //       // navigate("/game/"+parsedData.gameId)
-  //       navigate("/ten/")
-  //     }
-  //   }
-  // },[socket])
+  const [User, setUser] = useState("");
+  const user = useContext(UserContext);
+  const socket = useContext(SocketContext);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if(user !== null) setUser(user);
+  }, [user]);
 
   const handleMatchMaking = () => {
-    console.log("Matchmaking.......")
-    if(socket)
-    socket.send(JSON.stringify({type:"start_10", userId:User.user.id}))
-    navigate("/ten/")
-  }
-// bg-[#302E2B]
+    if(socket) {
+      socket.send(JSON.stringify({type:"start_10", userId:User.user.id}));
+      navigate("/ten/");
+    }
+  };
+
   return (
-    <div className='h-screen w-full  home'>
-      <Navbar/>
-      <div className='h-[92%] w-full bg--300 main'>
-          <div className='h-1/2 w-full flex flex-col gap-5 justify-center items-center'>
-
-         <div className='text-white block font-bold text-2xl'>
-         {User===''?"Loading.....":User.user.username}</div>
-         <Button onClick={handleMatchMaking} className='bg-green-400'>
-            Play random (10 Min Match)
+    <div className="min-h-screen bg-black">
+      <Navbar />
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col items-center justify-center space-y-8 mb-16">
+          <h1 className="text-3xl md:text-4xl font-bold text-white">
+            Welcome, {User === '' ? "Loading..." : User.user.username}
+          </h1>
+          <Button 
+            onClick={handleMatchMaking} 
+            className="bg-[#16A34A] hover:bg-[#15803d] text-white px-8 py-6 text-lg rounded-lg shadow-lg shadow-[#16A34A]/20 transition-colors"
+          >
+            Play Random (10 Min Match)
           </Button>
-          </div>
-          
-         <Matches/>
-
+        </div>
+        <Matches />
       </div>
-      
-
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;

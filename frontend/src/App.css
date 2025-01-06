@@ -3,7 +3,8 @@ body {
 }
 
 #auth {
-    background-image: url("./assets/chess_bg.png");
+    /* background-image: url("./assets/chess_bg.png"); */
+    background-color: black;
     border-image-repeat: norepeat;
 }
 .home {
