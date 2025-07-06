@@ -6,6 +6,16 @@ const prisma = new PrismaClient();
 const router = express.Router();
 const JWT_SECRET = 'JWT_SECRET'; // Should match your auth routes
 
+// Ensure Prisma connection
+(async () => {
+  try {
+    await prisma.$connect();
+    console.log('Prisma client connected successfully in friends.js');
+  } catch (error) {
+    console.error('Failed to connect Prisma client in friends.js:', error);
+  }
+})();
+
 // Authentication middleware
 const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -107,6 +117,15 @@ router.get('/friend-requests/received', authMiddleware, async (req, res) => {
   const userId = req.user;
 
   try {
+    // Debug logging
+    console.log('Attempting to fetch friend requests for user:', userId);
+    console.log('Prisma client status:', !!prisma);
+    console.log('FriendRequest model:', !!prisma.friendRequest);
+    
+    if (!prisma || !prisma.friendRequest) {
+      throw new Error('Prisma client or FriendRequest model not available');
+    }
+
     const friendRequests = await prisma.friendRequest.findMany({
       where: {
         receiverId: userId,
@@ -137,6 +156,13 @@ router.get('/friend-requests/sent', authMiddleware, async (req, res) => {
   const userId = req.user;
 
   try {
+    // Debug logging
+    console.log('Attempting to fetch sent requests for user:', userId);
+    
+    if (!prisma || !prisma.friendRequest) {
+      throw new Error('Prisma client or FriendRequest model not available');
+    }
+
     const friendRequests = await prisma.friendRequest.findMany({
       where: {
         senderId: userId,
@@ -243,6 +269,13 @@ router.get('/friends', authMiddleware, async (req, res) => {
   const userId = req.user;
 
   try {
+    // Debug logging
+    console.log('Attempting to fetch friends for user:', userId);
+    
+    if (!prisma || !prisma.friendship) {
+      throw new Error('Prisma client or Friendship model not available');
+    }
+
     const friendships = await prisma.friendship.findMany({
       where: {
         OR: [
