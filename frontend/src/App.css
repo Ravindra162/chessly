@@ -1,0 +1,14 @@
+body {
+    background-color: black;
+}
+
+#auth {
+    /* background-image: url("./assets/chess_bg.png"); */
+    background-color: black;
+    border-image-repeat: norepeat;
+}
+.home {
+    background-image: url("./assets/bg.webp");
+    background-repeat: no-repeat;
+    background-size: cover;
+}

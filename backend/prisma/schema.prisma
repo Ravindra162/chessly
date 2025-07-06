@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// postgresql://neondb_owner:go8cKnLvfY1A@ep-fragrant-frog-a5s49ybt-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// postgresql://ubtuqki8iwk4hzo2sb04:SYwuQcVWcY6oBhggGWkYbrsJnX1khN@bbtmguxsgukgoxilslot-postgresql.services.clever-cloud.com:50013/bbtmguxsgukgoxilslot
+// 
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  username String?
+  password String?
+  rating   Int
+
+  // Relations
+  whiteGames Games[] @relation("WhiteGames")
+  blackGames Games[] @relation("BlackGames")
+  winnerGames Games[] @relation("Winner")
+  
+  // Friend relationships
+  sentFriendRequests     FriendRequest[] @relation("FriendRequestSender")
+  receivedFriendRequests FriendRequest[] @relation("FriendRequestReceiver")
+  friendships1           Friendship[]    @relation("FriendshipUser1")
+  friendships2           Friendship[]    @relation("FriendshipUser2")
+  
+  // Challenge relationships
+  sentChallenges     ChallengeRequest[] @relation("ChallengeSent")
+  receivedChallenges ChallengeRequest[] @relation("ChallengeReceived")
+}
+model Games {
+  id            String   @id @default(uuid())
+  white         User     @relation("WhiteGames", fields: [whiteId], references: [id])
+  whiteId       Int
+  black         User     @relation("BlackGames", fields: [blackId], references: [id])
+  blackId       Int
+  time          Int      // Initial time for each player (e.g., 600 seconds for 10 minutes)
+  winner        User?    @relation("Winner", fields: [winnerId], references: [id])
+  winnerId      Int?
+  pgn           String   
+  Time          DateTime @default(now())
+
+  @@index([whiteId], name: "index_whiteId")
+  @@index([blackId], name: "index_blackId")
+}
+
+// Friend Request model
+model FriendRequest {
+  id         Int      @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  status     String   // 'pending', 'accepted', 'rejected'
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sender   User @relation("FriendRequestSender", fields: [senderId], references: [id])
+  receiver User @relation("FriendRequestReceiver", fields: [receiverId], references: [id])
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+// Friendship model (for accepted friend requests)
+model Friendship {
+  id        Int      @id @default(autoincrement())
+  user1Id   Int
+  user2Id   Int
+  createdAt DateTime @default(now())
+
+  user1 User @relation("FriendshipUser1", fields: [user1Id], references: [id])
+  user2 User @relation("FriendshipUser2", fields: [user2Id], references: [id])
+
+  @@unique([user1Id, user2Id])
+  @@index([user1Id])
+  @@index([user2Id])
+}
+
+// Challenge Request model (for game challenges between friends)
+model ChallengeRequest {
+  id          Int      @id @default(autoincrement())
+  challengerId Int
+  challengedId Int
+  timeControl Int      @default(600) // Default 10 minutes
+  status      String   // 'pending', 'accepted', 'rejected', 'expired'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  challenger User @relation("ChallengeSent", fields: [challengerId], references: [id])
+  challenged User @relation("ChallengeReceived", fields: [challengedId], references: [id])
+
+  @@unique([challengerId, challengedId])
+  @@index([challengerId])
+  @@index([challengedId])
+}
+
+
+
