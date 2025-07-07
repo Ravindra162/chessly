@@ -38,6 +38,25 @@ const Pgn = () => {
         setIsStalemate(chess.isStalemate());
     }, [chess]);
 
+    // Add keyboard navigation
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.key === 'ArrowRight') {
+                event.preventDefault();
+                handleNextMove();
+            } else if (event.key === 'ArrowLeft') {
+                event.preventDefault();
+                handlePrevMove();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [currentMoveIndex, moves]); // Dependencies for the keyboard handler
+
     const handleDragStart = (piece, rowIndex, colIndex) => {
         setDraggedPiece(piece);
         setDraggedFrom({ rowIndex, colIndex });

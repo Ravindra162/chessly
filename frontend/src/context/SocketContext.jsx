@@ -1,4 +1,5 @@
 import { createContext, useEffect, useState, useRef } from "react";
+import { API_CONFIG } from "../config/api";
 
 export const SocketContext = createContext();
 
@@ -22,7 +23,7 @@ export function SocketContextProvider({ children }) {
         setIsLoading(true);
         console.log("Attempting to connect to WebSocket...");
         
-        const newSocket = new WebSocket("ws://localhost:5000");
+        const newSocket = new WebSocket(API_CONFIG.WEBSOCKET_URL);
 
         newSocket.onopen = () => {
             console.log("WebSocket connection established");

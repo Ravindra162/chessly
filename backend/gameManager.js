@@ -120,7 +120,7 @@ export class GameManager {
           console.log("[Game] Found pending player, creating new game between:", 
             this.pendingTenPlayer.userId, "and", parsedData.user.userId);
           let currUser = { ...parsedData.user, socket: ws };
-          const game = await createGameInDatabase(this.pendingTenPlayer, currUser);
+          const game = await createGameInDatabase(this.pendingTenPlayer.userId, currUser.userId);
 
           if (game) {
             console.log("[Game] Game created in database, initializing new game");
@@ -651,10 +651,7 @@ export class GameManager {
       const whiteId = isWhite ? challengerId : challengedId;
       const blackId = isWhite ? challengedId : challengerId;
 
-      const game = await createGameInDatabase(
-        { userId: whiteId, username: isWhite ? challengerData.username : challengedData.username },
-        { userId: blackId, username: isWhite ? challengedData.username : challengerData.username }
-      );
+      const game = await createGameInDatabase(whiteId, blackId);
 
       if (game) {
         // Create game instance

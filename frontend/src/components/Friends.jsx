@@ -7,6 +7,7 @@ import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Loading from './Loading';
+import { getApiUrl, getAuthHeaders, API_CONFIG } from '../config/api';
 
 const Friends = () => {
   const [friends, setFriends] = useState([]);
@@ -29,23 +30,10 @@ const Friends = () => {
   const socket = socketContext?.socket || socketContext;
   const navigate = useNavigate();
 
-  const getEnvironmentUrl = () => {
-    if (import.meta.env.VITE_ENVIRONMENT === 'production') {
-      return import.meta.env.VITE_BACKEND_URL || 'https://chessly-backend.vercel.app';
-    }
-    return 'http://localhost:5000';
-  };
-
-  const getAuthHeaders = () => ({
-    headers: {
-      'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
-    }
-  });
-
   // Fetch friends list
   const fetchFriends = async () => {
     try {
-      const response = await axios.get(`${getEnvironmentUrl()}/friends/friends`, getAuthHeaders());
+      const response = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.FRIENDS), getAuthHeaders());
       setFriends(response.data.friends);
     } catch (error) {
       console.error('Error fetching friends:', error);
@@ -56,7 +44,7 @@ const Friends = () => {
   // Fetch received friend requests
   const fetchFriendRequests = async () => {
     try {
-      const response = await axios.get(`${getEnvironmentUrl()}/friends/friend-requests/received`, getAuthHeaders());
+      const response = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.FRIEND_REQUESTS_RECEIVED), getAuthHeaders());
       setFriendRequests(response.data.friendRequests);
     } catch (error) {
       console.error('Error fetching friend requests:', error);
@@ -67,7 +55,7 @@ const Friends = () => {
   // Fetch sent friend requests
   const fetchSentRequests = async () => {
     try {
-      const response = await axios.get(`${getEnvironmentUrl()}/friends/friend-requests/sent`, getAuthHeaders());
+      const response = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.FRIEND_REQUESTS_SENT), getAuthHeaders());
       setSentRequests(response.data.friendRequests);
     } catch (error) {
       console.error('Error fetching sent requests:', error);
@@ -84,7 +72,7 @@ const Friends = () => {
 
     setIsLoading(true);
     try {
-      const response = await axios.get(`${getEnvironmentUrl()}/friends/search?username=${encodeURIComponent(query)}`, getAuthHeaders());
+      const response = await axios.get(`${getApiUrl(API_CONFIG.ENDPOINTS.FRIEND_SEARCH)}?username=${encodeURIComponent(query)}`, getAuthHeaders());
       setSearchResults(response.data.users);
     } catch (error) {
       console.error('Error searching users:', error);
@@ -102,7 +90,7 @@ const Friends = () => {
     }));
 
     try {
-      await axios.post(`${getEnvironmentUrl()}/friends/friend-request/send`, { receiverUsername: username }, getAuthHeaders());
+      await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.FRIEND_REQUEST_SEND), { receiverUsername: username }, getAuthHeaders());
       toast.success('Friend request sent!');
       // Refresh search results to update status
       searchUsers(searchQuery);
@@ -126,7 +114,7 @@ const Friends = () => {
     }));
 
     try {
-      await axios.post(`${getEnvironmentUrl()}/friends/friend-request/accept`, { requestId }, getAuthHeaders());
+      await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.FRIEND_REQUEST_ACCEPT), { requestId }, getAuthHeaders());
       toast.success('Friend request accepted!');
       fetchFriendRequests();
       fetchFriends();
@@ -149,7 +137,7 @@ const Friends = () => {
     }));
 
     try {
-      await axios.post(`${getEnvironmentUrl()}/friends/friend-request/reject`, { requestId }, getAuthHeaders());
+      await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.FRIEND_REQUEST_REJECT), { requestId }, getAuthHeaders());
       toast.success('Friend request rejected');
       fetchFriendRequests();
     } catch (error) {
@@ -172,7 +160,7 @@ const Friends = () => {
       }));
 
       try {
-        await axios.delete(`${getEnvironmentUrl()}/friends/friend/remove`, {
+        await axios.delete(getApiUrl(API_CONFIG.ENDPOINTS.FRIEND_REMOVE), {
           ...getAuthHeaders(),
           data: { friendId }
         });
@@ -199,7 +187,7 @@ const Friends = () => {
 
     try {
       // First verify friendship via API
-      const response = await axios.post(`${getEnvironmentUrl()}/friends/challenge`, {
+      const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.FRIEND_CHALLENGE), {
         friendId
       }, getAuthHeaders());
 

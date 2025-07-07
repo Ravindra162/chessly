@@ -6,6 +6,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import { LoadingContext } from "./LoadingContext";
 import 'react-toastify/dist/ReactToastify.css';
 import Loading from "../components/Loading";
+import { getApiUrl, getAuthHeaders } from '../config/api';
 
 export function UserContextProvider({ children }) {
     const navigate = useNavigate();
@@ -29,12 +30,7 @@ export function UserContextProvider({ children }) {
             }
     
             // Make the axios request and handle the response using .then() and .catch()
-            axios.get(`http://localhost:5000
-/user/user`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
+            axios.get(getApiUrl('/user/user'), getAuthHeaders())
             .then((response) => {
                 console.log("User data fetched:", response);
                 setTimeout(()=>{

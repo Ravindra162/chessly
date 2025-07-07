@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { getApiUrl } from '../../config/api';
 
 const Register = () => {
   const [email, setEmail] = useState('');
@@ -27,7 +28,7 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/auth/register', {
+      const response = await axios.post(getApiUrl('/auth/register'), {
         email,
         username,
         password

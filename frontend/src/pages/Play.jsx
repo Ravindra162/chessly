@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext, useRef } from 'react';
 import { SocketContext } from '../context/SocketContext';
 import { UserContext } from '../context/UserContext';
 import { Chess } from 'chess.js';
+import { getApiUrl, getAuthHeaders } from '../config/api';
 import whitePawn from '../assets/pieces/wP.png';
 import blackPawn from '../assets/pieces/bP.png';
 import whiteKnight from '../assets/pieces/wN.png';
@@ -96,6 +97,22 @@ const Play = () => {
           startMatch(parsedData.startTime, parsedData.color);
           setCurrentUsername(parsedData.currentUsername);
           setOpponentUsername(parsedData.opponentUsername);
+        } 
+        else if (parsedData.type === "bot_game_created") {
+          // Handle bot game creation
+          setPlayerColor(parsedData.color);
+          setGameBoard(
+            parsedData.color === 'white'
+              ? parsedData.board
+              : parsedData.board.map(row => row.reverse()).reverse()
+          );
+          setGameId(parsedData.gameId);
+          setIsMyTurn(parsedData.color === 'white');
+          setMyTimer(600); // Default to 10 minutes, will be updated from server
+          setOpponentTimer(600);
+          startMatch(parsedData.startTime, parsedData.color);
+          setCurrentUsername(user?.user?.username || 'Player');
+          setOpponentUsername(parsedData.opponentUsername || 'Chess Bot');
         } 
         else if (parsedData.type === "existing_game") {
           setPlayerColor(parsedData.color);
@@ -193,6 +210,81 @@ const Play = () => {
           
           // Always update turn state
           setIsMyTurn(parsedData.turn === playerColor[0]);
+        }
+        else if (parsedData.type === 'move_update' && parsedData.isBot) {
+          // Handle bot move updates
+          console.log("Bot made a move:", parsedData.move);
+          
+          // Get bot's piece information for animation
+          const botPiece = chessGame.get(parsedData.move.from);
+          const capturedByBot = chessGame.get(parsedData.move.to);
+          
+          // Animate bot's move
+          if (botPiece) {
+            animatePieceMove(parsedData.move.from, parsedData.move.to, botPiece, !!capturedByBot);
+          }
+          
+          // Make the move in the chess game state
+          const moveResult = chessGame.move({ 
+            from: parsedData.move.from, 
+            to: parsedData.move.to, 
+            promotion: parsedData.move.promotion 
+          });
+          
+          // Play sound for bot's move
+          if (moveResult) {
+            chessSounds.playMoveSound(moveResult);
+          }
+          
+          // Update the board after animation
+          setTimeout(() => {
+            const updatedBoard = playerColor === 'white'
+              ? parsedData.board
+              : parsedData.board.map(row => row.reverse()).reverse();
+            setGameBoard(updatedBoard);
+          }, 50);
+          
+          // Check for check status
+          if (chessGame.inCheck()) {
+            const kingSquare = chessGame.board().flat().find(
+              piece => piece && piece.type === 'k' && piece.color === chessGame.turn()
+            );
+            if (kingSquare) {
+              if (playerColor[0] === 'b') {
+                setKingInCheck({ row: (kingSquare.square[1] - 1), col: 7 - (kingSquare.square.charCodeAt(0) - 97) });
+              } else {
+                setKingInCheck({ row: 8 - kingSquare.square[1], col: kingSquare.square.charCodeAt(0) - 97 });
+              }
+            }
+          } else {
+            setKingInCheck(null);
+          }
+          
+          // Update turn state - now it's player's turn
+          setIsMyTurn(true);
+          
+          // Start player's timer
+          startMyTimer();
+          clearInterval(opponentTimerRef.current);
+        }
+        else if (parsedData.type === 'bot_game_end') {
+          // Handle bot game ending
+          let message = '';
+          if (parsedData.winner) {
+            if ((parsedData.winner === 'white' && playerColor === 'white') || 
+                (parsedData.winner === 'black' && playerColor === 'black')) {
+              message = `Congratulations! You won by ${parsedData.reason}`;
+            } else {
+              message = `You lost by ${parsedData.reason}. Better luck next time!`;
+            }
+          } else {
+            message = `Game ended in a ${parsedData.reason}`;
+          }
+          
+          setTimeout(() => {
+            alert(message);
+            navigate("/");
+          }, 1000);
         }
         else if (parsedData.type === 'end_game') {
           alert(parsedData.reason);
@@ -404,9 +496,9 @@ const Play = () => {
       
       try {
         if (chessGame.isCheckmate()) {
-          axios.post(`http://localhost:5000/user/game/update/winnerId`, 
+          axios.post(getApiUrl('/user/game/update/winnerId'), 
             { gameId, winnerId: user.user.id, pgn: chessGame.pgn() }, 
-            { headers: { 'Authorization': `Bearer ${localStorage.getItem("auth_token")}` } }
+            getAuthHeaders()
           ).then((response) => {
             alert("Congratulations, you won the game");
           }).catch(e => {
@@ -567,10 +659,10 @@ const Play = () => {
   };
 
   return (
-    <div className='flex flex-col items-center justify-center h-screen bg-gray-900'>
+    <div className='flex flex-col items-center justify-center min-h-screen bg-gray-900 p-2 md:p-4'>
       {/* Connection Status Indicator */}
       {!isConnected && (
-        <div className="fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+        <div className="fixed top-4 right-4 bg-red-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg shadow-lg z-50 text-sm md:text-base">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
             <span>Reconnecting...</span>
@@ -578,16 +670,16 @@ const Play = () => {
         </div>
       )}
       
-      <div className='Board-with-timer flex flex-col h-[900px] w-[900px] items-center justify-center bg-black gap-5'>
-        <div className='h-[10%] w-[35%] md:h-[10%] md:w-[70%] flex justify-between p-1 md:p-2'>
-          <div className='opponent-timer h-full w-[30%] bg-green-500 rounded-lg flex items-center justify-center text-white text-xl'>
+      <div className='Board-with-timer flex flex-col w-full max-w-[320px] md:max-w-[640px] lg:max-w-[900px] items-center justify-center bg-black gap-2 md:gap-5 p-2 md:p-4 rounded-lg'>
+        <div className='w-full flex justify-between items-center px-2'>
+          <div className='opponent-timer h-10 md:h-12 px-3 md:px-4 bg-green-500 rounded-lg flex items-center justify-center text-white text-sm md:text-xl'>
             {formatTime(opponentTimer)}
           </div>
-          <div className='opponent-pieces basis-1/2 h-full w-[30%] bg-green-500 rounded-lg flex items-center justify-center text-white text-xl'>
+          <div className='opponent-pieces h-10 md:h-12 px-3 md:px-4 bg-green-500 rounded-lg flex items-center justify-center text-white text-sm md:text-xl'>
             {opponentUsername === '' ? "Loading...." : opponentUsername}
           </div>
         </div>
-        <div className="grid grid-cols-8 gap-0 w-[320px] h-[320px] md:w-[640px] md:h-[640px] border border-gray-600">
+        <div className="grid grid-cols-8 gap-0 w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] md:w-[480px] md:h-[480px] lg:w-[640px] lg:h-[640px] border border-gray-600">
           {gameBoard.map((row, rowIndex) => {
             return row.map((piece, colIndex) => {
               // Calculate the current square coordinate
@@ -603,7 +695,7 @@ const Play = () => {
               return (
                 <div 
                   key={`${rowIndex}-${colIndex}`} 
-                  className={`w-[40px] h-[40px] md:w-[80px] md:h-[80px] flex items-center justify-center text-2xl ${
+                  className={`w-[35px] h-[35px] sm:w-[40px] sm:h-[40px] md:w-[60px] md:h-[60px] lg:w-[80px] lg:h-[80px] flex items-center justify-center text-lg md:text-2xl ${
                     (rowIndex + colIndex) % 2 === 0 ? 'bg-gray-200' : 'bg-gray-400'
                   } ${kingInCheck && kingInCheck.row === rowIndex && kingInCheck.col === colIndex ? 'bg-red-500' : ''} ${
                     selectedSquare && selectedSquare.row === rowIndex && selectedSquare.col === colIndex ? 'bg-yellow-500' : ''
@@ -618,28 +710,30 @@ const Play = () => {
             });
           })}
         </div>
-        <div className='h-[10%] w-[35%] md:h-[10%] md:w-[70%] flex justify-between p-1 md:p-2'>
-          <div className='my-timer h-full w-[30%] bg-green-500 rounded-lg flex items-center justify-center text-white text-xl'>
+        <div className='w-full flex justify-between items-center px-2'>
+          <div className='my-timer h-10 md:h-12 px-3 md:px-4 bg-green-500 rounded-lg flex items-center justify-center text-white text-sm md:text-xl'>
             {formatTime(myTimer)}
           </div>
           <button
-            className='reject-button h-full w-[20%] bg-red-500 rounded-lg flex items-center justify-center text-white text-xl'
+            className='reject-button h-10 md:h-12 px-3 md:px-4 bg-red-500 rounded-lg flex items-center justify-center text-white text-sm md:text-xl hover:bg-red-600 transition-colors'
             onClick={handleReject}
           >Resign</button>
-          <div className='opponent-pieces h-full basis-1/2 w-[30%] bg-green-500 rounded-lg flex items-center justify-center text-white text-xl'>
+          <div className='my-pieces h-10 md:h-12 px-3 md:px-4 bg-green-500 rounded-lg flex items-center justify-center text-white text-sm md:text-xl'>
             {currentUsername === '' ? "Loading...." : currentUsername}
           </div>
         </div>
       </div>
 
       {promotionPrompt && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-4 rounded shadow-lg">
-          <h2 className="text-lg font-bold mb-2">Promote your pawn:</h2>
-          <div className="flex gap-2">
-            <button onClick={() => handlePromotion('q')} className="bg-blue-500 text-white p-2 rounded">Queen</button>
-            <button onClick={() => handlePromotion('r')} className="bg-blue-500 text-white p-2 rounded">Rook</button>
-            <button onClick={() => handlePromotion('b')} className="bg-blue-500 text-white p-2 rounded">Bishop</button>
-            <button onClick={() => handlePromotion('n')} className="bg-blue-500 text-white p-2 rounded">Knight</button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-4 md:p-6 rounded-lg shadow-xl max-w-sm w-full">
+            <h2 className="text-lg md:text-xl font-bold mb-4 text-center">Promote your pawn:</h2>
+            <div className="grid grid-cols-2 gap-2 md:gap-3">
+              <button onClick={() => handlePromotion('q')} className="bg-blue-500 hover:bg-blue-600 text-white p-3 md:p-4 rounded-lg text-sm md:text-base font-medium transition-colors">Queen</button>
+              <button onClick={() => handlePromotion('r')} className="bg-blue-500 hover:bg-blue-600 text-white p-3 md:p-4 rounded-lg text-sm md:text-base font-medium transition-colors">Rook</button>
+              <button onClick={() => handlePromotion('b')} className="bg-blue-500 hover:bg-blue-600 text-white p-3 md:p-4 rounded-lg text-sm md:text-base font-medium transition-colors">Bishop</button>
+              <button onClick={() => handlePromotion('n')} className="bg-blue-500 hover:bg-blue-600 text-white p-3 md:p-4 rounded-lg text-sm md:text-base font-medium transition-colors">Knight</button>
+            </div>
           </div>
         </div>
       )}

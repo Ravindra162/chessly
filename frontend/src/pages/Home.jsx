@@ -115,23 +115,42 @@ const Home = () => {
             Status: {isConnected ? "Connected" : "Disconnected"}
           </div>
           
-          <Button 
-            onClick={handleMatchMaking} 
-            isLoading={isMatchmaking}
-            disabled={isMatchmaking || !isConnected}
-            className={`${
-              isMatchmaking || !isConnected 
-                ? 'bg-gray-500 cursor-not-allowed' 
-                : 'bg-[#16A34A] hover:bg-[#15803d]'
-            } text-white px-8 py-6 text-lg rounded-lg shadow-lg shadow-[#16A34A]/20 transition-colors`}
-          >
-            {!isConnected 
-              ? "Connecting..." 
-              : isMatchmaking 
-                ? "Finding Match..." 
-                : "Play Random (10 Min Match)"
-            }
-          </Button>
+          {/* Game Options */}
+          <div className="flex flex-col sm:flex-row gap-4 w-full max-w-2xl">
+            <Button 
+              onClick={handleMatchMaking} 
+              isLoading={isMatchmaking}
+              disabled={isMatchmaking || !isConnected}
+              className={`flex-1 ${
+                isMatchmaking || !isConnected 
+                  ? 'bg-gray-500 cursor-not-allowed' 
+                  : 'bg-[#16A34A] hover:bg-[#15803d]'
+              } text-white px-6 py-6 text-lg rounded-lg shadow-lg shadow-[#16A34A]/20 transition-colors`}
+            >
+              {!isConnected 
+                ? "Connecting..." 
+                : isMatchmaking 
+                  ? "Finding Match..." 
+                  : "🌐 Play vs Human"
+              }
+            </Button>
+            
+            <Button 
+              onClick={() => navigate('/bot')}
+              disabled={!isConnected}
+              className={`flex-1 ${
+                !isConnected 
+                  ? 'bg-gray-500 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              } text-white px-6 py-6 text-lg rounded-lg shadow-lg shadow-blue-600/20 transition-colors`}
+            >
+              🤖 Play vs Bot
+            </Button>
+          </div>
+          
+          <div className="text-center text-gray-400 text-sm max-w-md">
+            Play against other players online or practice against computer opponents with adjustable difficulty
+          </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Matches />

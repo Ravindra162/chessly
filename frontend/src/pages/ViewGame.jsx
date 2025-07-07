@@ -8,6 +8,7 @@ import { Button } from '@nextui-org/react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useChessSounds } from '../utils/chessSounds';
+import { getApiUrl, getAuthHeaders } from '../config/api';
 
 const ViewGame = () => {
     const [searchParams] = useSearchParams();
@@ -46,13 +47,6 @@ const ViewGame = () => {
         return pieceMap[piece.type] ? `${piece.color === 'w' ? 'w' : 'b'}${pieceMap[piece.type][0]}` : '';
     };
 
-    const getEnvironmentUrl = () => {
-        if (import.meta.env.VITE_ENVIRONMENT === 'production') {
-            return import.meta.env.VITE_BACKEND_URL || 'https://chessly-backend.vercel.app';
-        }
-        return 'http://localhost:5000';
-    };
-
     useEffect(() => {
         if (!gameId) {
             setError('No game ID provided');
@@ -62,11 +56,7 @@ const ViewGame = () => {
 
         const fetchGame = async () => {
             try {
-                const response = await axios.get(`${getEnvironmentUrl()}/user/games/${gameId}`, {
-                    headers: {
-                        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
-                    }
-                });
+                const response = await axios.get(getApiUrl(`/user/games/${gameId}`), getAuthHeaders());
                 
                 const game = response.data.game;
                 setGameData(game);
@@ -125,6 +115,25 @@ const ViewGame = () => {
     useEffect(() => {
         updateGameState(chess);
     }, [chess]);
+
+    // Add keyboard navigation
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.key === 'ArrowRight') {
+                event.preventDefault();
+                handleNextMove();
+            } else if (event.key === 'ArrowLeft') {
+                event.preventDefault();
+                handlePrevMove();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [currentMoveIndex, moves]); // Dependencies for the keyboard handler
 
     const goToMove = (moveIndex, playSound = true) => {
         const newChess = new Chess();
@@ -261,11 +270,11 @@ const ViewGame = () => {
 
                         {/* Chess Board */}
                         <div className="relative">
-                            <div className="h-[400px] w-[400px] md:h-[500px] md:w-[500px] chess-board grid grid-cols-8 border-2 border-[#16A34A] rounded-lg overflow-hidden">
+                            <div className="h-[280px] w-[280px] sm:h-[320px] sm:w-[320px] md:h-[400px] md:w-[400px] lg:h-[500px] lg:w-[500px] chess-board grid grid-cols-8 border-2 border-[#16A34A] rounded-lg overflow-hidden">
                                 {board.map((row, rowIndex) =>
                                     row.map((square, colIndex) => {
                                         const isKingInCheck = kingInCheck && kingInCheck.square === `${String.fromCharCode(97 + colIndex)}${8 - rowIndex}`;
-                                        const squareSize = 'h-[50px] w-[50px] md:h-[62.5px] md:w-[62.5px]';
+                                        const squareSize = 'h-[35px] w-[35px] sm:h-[40px] sm:w-[40px] md:h-[50px] md:w-[50px] lg:h-[62.5px] lg:w-[62.5px]';
                                         
                                         return (
                                             <div
@@ -297,33 +306,37 @@ const ViewGame = () => {
                         </div>
 
                         {/* Move Controls */}
-                        <div className="mt-6 space-y-4">
-                            <div className="flex justify-center gap-2">
+                        <div className="mt-4 md:mt-6 space-y-3 md:space-y-4 w-full max-w-lg">
+                            <div className="flex flex-wrap justify-center gap-2">
                                 <Button 
                                     onClick={handleGoToStart}
                                     disabled={currentMoveIndex < 0}
-                                    className="bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-50"
+                                    className="bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-50 text-xs md:text-sm px-2 md:px-4"
+                                    size="sm"
                                 >
                                     ⏮ Start
                                 </Button>
                                 <Button 
                                     onClick={handlePrevMove}
                                     disabled={currentMoveIndex < 0}
-                                    className="bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-50"
+                                    className="bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-50 text-xs md:text-sm px-2 md:px-4"
+                                    size="sm"
                                 >
                                     ← Previous
                                 </Button>
                                 <Button 
                                     onClick={handleNextMove}
                                     disabled={currentMoveIndex >= moves.length - 1}
-                                    className="bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-50"
+                                    className="bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-50 text-xs md:text-sm px-2 md:px-4"
+                                    size="sm"
                                 >
                                     Next →
                                 </Button>
                                 <Button 
                                     onClick={handleGoToEnd}
                                     disabled={currentMoveIndex >= moves.length - 1}
-                                    className="bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-50"
+                                    className="bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-50 text-xs md:text-sm px-2 md:px-4"
+                                    size="sm"
                                 >
                                     End ⏭
                                 </Button>
@@ -337,7 +350,8 @@ const ViewGame = () => {
                                         soundEnabled 
                                             ? 'bg-green-600 hover:bg-green-700' 
                                             : 'bg-gray-600 hover:bg-gray-700'
-                                    } text-white`}
+                                    } text-white text-xs md:text-sm px-3 md:px-4`}
+                                    size="sm"
                                 >
                                     {soundEnabled ? '🔊' : '🔇'} Sound {soundEnabled ? 'On' : 'Off'}
                                 </Button>

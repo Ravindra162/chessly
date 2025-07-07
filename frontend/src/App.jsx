@@ -6,6 +6,7 @@ import Png from './pages/Pgn'
 import ViewGame from './pages/ViewGame'
 import Room from './pages/Room'
 import PlayTen from './pages/PlayTen'
+import PlayBot from './pages/PlayBot'
 import Home from './pages/Home'
 import Register from './pages/auth/Register'
 import Login from './pages/auth/Login'
@@ -36,6 +37,7 @@ const App = () => {
                     <Route path="/room" element={<Room />} />
                     <Route path="/game/:id" element={<Play />} />
                     <Route path='/ten' element={<PlayTen />} />
+                    <Route path='/bot' element={<PlayBot />} />
                     <Route path='/pgn' element={<Png />} />
                     <Route path='/view-game' element={<ViewGame />} />
                   </Routes>
