@@ -1,6 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import { Game } from "./game.js";
 import { createGameInDatabase, updateGameInDatabase } from "./actions/db.js";
+import { ChessBot } from "./chessBot.js";
+import { Chess } from "chess.js";
 import Redis from "ioredis";
 import dotenv from "dotenv";
 dotenv.config();
@@ -315,6 +317,17 @@ export class GameManager {
             console.error("[Game] Critical: Neither player could receive game update");
           }
 
+          // If this is a bot game and it's now the bot's turn, make bot move
+          if (game.isBot && !game.game.isGameOver()) {
+            const currentTurn = game.game.turn();
+            if (currentTurn === game.botColor.charAt(0)) {
+              console.log("[Bot Game] Triggering bot move after human move");
+              setTimeout(() => {
+                this.makeBotMove(game.id);
+              }, 500); // Small delay for better UX
+            }
+          }
+
         } catch (e) {
           console.error("[Game] Invalid move:", e);
           // Send error back to the player who made the invalid move
@@ -484,6 +497,9 @@ export class GameManager {
         } catch (error) {
           console.error("[Game] Error handling end_game request:", error);
         }
+      } else if (parsedData.type === "create_bot_game") {
+        console.log("[Game] Handling create_bot_game request for user:", parsedData.user.userId);
+        await this.createBotGame(ws, parsedData);
       }
     });
   }
@@ -794,6 +810,234 @@ export class GameManager {
       console.log(`[Game] Updated game ${gameId} in database:`, updateData);
     } catch (error) {
       console.error("[Game] Error updating game in database:", error);
+    }
+  }
+
+  // Create a bot game
+  async createBotGame(ws, data) {
+    try {
+      const { user, difficulty = 'medium', playerColor = 'white', timeControl = 600 } = data;
+      
+      console.log(`[Bot Game] Creating bot game for user ${user.userId} with difficulty ${difficulty}`);
+      
+      const gameId = Math.random().toString(36).substring(2, 15);
+      const chess = new Chess();
+      const bot = new ChessBot(difficulty);
+      
+      // Create bot player object
+      const botPlayer = {
+        userId: 'bot_' + difficulty,
+        username: `Chess Bot (${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)})`,
+        socket: null, // Bot doesn't have a socket
+        isBot: true,
+        difficulty: difficulty,
+        rating: ChessBot.getDifficultyRating(difficulty)
+      };
+      
+      // Assign colors
+      let whitePlayer, blackPlayer;
+      if (playerColor === 'white') {
+        whitePlayer = { 
+          socket: ws, 
+          userId: user.userId, 
+          username: user.username,
+          rating: user.rating 
+        };
+        blackPlayer = botPlayer;
+      } else {
+        whitePlayer = botPlayer;
+        blackPlayer = { 
+          socket: ws, 
+          userId: user.userId, 
+          username: user.username,
+          rating: user.rating 
+        };
+      }
+      
+      // Create game object
+      const gameObj = {
+        id: gameId,
+        white_player: whitePlayer,
+        black_player: blackPlayer,
+        game: chess,
+        whiteTimer: timeControl,
+        blackTimer: timeControl,
+        isStarted: false,
+        isBot: true,
+        bot: bot,
+        botColor: playerColor === 'white' ? 'black' : 'white'
+      };
+      
+      this.games.push(gameObj);
+      
+      // Store in database
+      const dbGameId = await createGameInDatabase(
+        whitePlayer.userId === 'bot_' + difficulty ? null : whitePlayer.userId,
+        blackPlayer.userId === 'bot_' + difficulty ? null : blackPlayer.userId,
+        timeControl,
+        gameId
+      );
+      
+      const startTime = Date.now() + 5000; // 5 seconds from now
+      
+      // Send game created message to human player
+      ws.send(JSON.stringify({
+        type: "bot_game_created",
+        gameId,
+        color: playerColor,
+        board: chess.board(),
+        startTime,
+        botDifficulty: difficulty,
+        botRating: ChessBot.getDifficultyRating(difficulty),
+        opponentUsername: botPlayer.username
+      }));
+      
+      console.log(`[Bot Game] Bot game ${gameId} created with user ${user.userId} as ${playerColor}`);
+      
+      // If bot plays white, make the first move after game starts
+      if (playerColor === 'black') {
+        setTimeout(() => {
+          this.makeBotMove(gameId);
+        }, 5500); // Slightly after game starts
+      }
+      
+    } catch (error) {
+      console.error("[Bot Game] Error creating bot game:", error);
+      ws.send(JSON.stringify({
+        type: "bot_game_error",
+        error: "Failed to create bot game"
+      }));
+    }
+  }
+  
+  // Make a bot move
+  async makeBotMove(gameId) {
+    try {
+      const game = this.games.find(g => g.id === gameId && g.isBot);
+      if (!game) {
+        console.error("[Bot Game] Bot game not found:", gameId);
+        return;
+      }
+      
+      if (game.game.isGameOver()) {
+        console.log("[Bot Game] Game is over, not making bot move");
+        return;
+      }
+      
+      const currentTurn = game.game.turn();
+      const botColor = game.botColor;
+      
+      if (currentTurn !== botColor.charAt(0)) {
+        console.log("[Bot Game] Not bot's turn, skipping move");
+        return;
+      }
+      
+      console.log(`[Bot Game] Bot making move for game ${gameId}`);
+      
+      // Add some thinking time for realism
+      const thinkingTime = game.bot.difficulty === 'easy' ? 500 : 
+                          game.bot.difficulty === 'medium' ? 1000 :
+                          game.bot.difficulty === 'hard' ? 1500 : 2000;
+      
+      setTimeout(async () => {
+        try {
+          const move = game.bot.getBestMove(game.game.fen());
+          
+          if (!move) {
+            console.error("[Bot Game] No valid move found for bot");
+            return;
+          }
+          
+          console.log(`[Bot Game] Bot move: ${move.san}`);
+          
+          // Make the move
+          const result = game.game.move(move);
+          if (!result) {
+            console.error("[Bot Game] Invalid bot move:", move);
+            return;
+          }
+          
+          // Get human player
+          const humanPlayer = String(game.white_player.userId).startsWith('bot_') ? 
+                             game.black_player : game.white_player;
+          
+          // Send move to human player
+          if (humanPlayer.socket && humanPlayer.socket.readyState === humanPlayer.socket.OPEN) {
+            humanPlayer.socket.send(JSON.stringify({
+              type: "move_update",
+              gameId: gameId,
+              move: result,
+              board: game.game.board(),
+              pgn: game.game.pgn(),
+              currentTurn: game.game.turn(),
+              isBot: true
+            }));
+          }
+          
+          // Check for game over conditions
+          if (game.game.isGameOver()) {
+            await this.handleBotGameEnd(game);
+          }
+          
+        } catch (error) {
+          console.error("[Bot Game] Error making bot move:", error);
+        }
+      }, thinkingTime);
+      
+    } catch (error) {
+      console.error("[Bot Game] Error in makeBotMove:", error);
+    }
+  }
+  
+  // Handle bot game end
+  async handleBotGameEnd(game) {
+    try {
+      let winner = null;
+      let reason = "";
+      
+      if (game.game.isCheckmate()) {
+        winner = game.game.turn() === 'w' ? 'black' : 'white';
+        reason = "Checkmate";
+      } else if (game.game.isStalemate()) {
+        reason = "Stalemate";
+      } else if (game.game.isDraw()) {
+        reason = "Draw";
+      }
+      
+      // Determine winner ID for database
+      let winnerId = null;
+      if (winner) {
+        const winnerPlayer = winner === 'white' ? game.white_player : game.black_player;
+        winnerId = String(winnerPlayer.userId).startsWith('bot_') ? null : winnerPlayer.userId;
+      }
+      
+      // Update database
+      await updateGameInDatabase(game.id, winnerId, game.game.pgn());
+      
+      // Send game end message to human player
+      const humanPlayer = String(game.white_player.userId).startsWith('bot_') ? 
+                         game.black_player : game.white_player;
+      
+      if (humanPlayer.socket && humanPlayer.socket.readyState === humanPlayer.socket.OPEN) {
+        humanPlayer.socket.send(JSON.stringify({
+          type: "bot_game_end",
+          gameId: game.id,
+          winner: winner,
+          reason: reason,
+          pgn: game.game.pgn()
+        }));
+      }
+      
+      // Remove game from active games
+      const gameIndex = this.games.findIndex(g => g.id === game.id);
+      if (gameIndex !== -1) {
+        this.games.splice(gameIndex, 1);
+      }
+      
+      console.log(`[Bot Game] Bot game ${game.id} ended: ${reason}`);
+      
+    } catch (error) {
+      console.error("[Bot Game] Error handling bot game end:", error);
     }
   }
 }

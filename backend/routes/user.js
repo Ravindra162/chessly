@@ -170,8 +170,8 @@ router.get("/games/", authMiddleware, async (req, res) => {
       id: game.id,
       winnerId: game.winnerId,
       pgn: game.pgn,
-      whiteUsername: game.white.username,
-      blackUsername: game.black.username,
+      whiteUsername: game.white ? game.white.username : 'Chess Bot',
+      blackUsername: game.black ? game.black.username : 'Chess Bot',
     }));
     // reverse aggregated data
     aggregatedData = aggregatedData.reverse();
@@ -225,8 +225,8 @@ router.get("/games/:gameId", authMiddleware, async (req, res) => {
       winnerId: game.winnerId,
       pgn: game.pgn,
       createdAt: game.Time,
-      whiteUsername: game.white.username,
-      blackUsername: game.black.username,
+      whiteUsername: game.white ? game.white.username : 'Chess Bot',
+      blackUsername: game.black ? game.black.username : 'Chess Bot',
     };
 
     res.status(200).json({ game: gameData });

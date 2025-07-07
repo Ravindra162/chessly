@@ -4,7 +4,11 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 const JWT_SECRET = 'JWT_SECRET';
-const prisma = new PrismaClient();
+
+// Initialize Prisma with better error handling for production
+const prisma = new PrismaClient({
+  log: ['query', 'info', 'warn', 'error'],
+});
 
 const router = express.Router();
 

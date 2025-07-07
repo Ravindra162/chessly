@@ -1,15 +1,30 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
-async function createGameInDatabase(whitePlayer, blackPlayer) {
+async function createGameInDatabase(whitePlayerId, blackPlayerId, timeControl = 600, gameId = null) {
     try {
+      // For bot games, one of the player IDs might be null
+      const gameData = {
+        time: timeControl,
+        pgn: "",
+      };
+      
+      // Add player IDs only if they exist (not bot)
+      if (whitePlayerId && !whitePlayerId.toString().startsWith('bot_')) {
+        gameData.whiteId = whitePlayerId;
+      }
+      
+      if (blackPlayerId && !blackPlayerId.toString().startsWith('bot_')) {
+        gameData.blackId = blackPlayerId;
+      }
+      
+      // If custom gameId is provided, use it
+      if (gameId) {
+        gameData.id = gameId;
+      }
+      
       const game = await prisma.games.create({
-        data: {
-          whiteId: whitePlayer.userId,
-          blackId: blackPlayer.userId,
-          time: 600, // Example time control (10 minutes per player)
-          pgn: "",
-        },
+        data: gameData,
       });
       return game;
     } catch (error) {

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -6,6 +7,7 @@ import { GameManager } from './gameManager.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
 import friendsRoutes from './routes/friends.js';
+import botRoutes from './routes/bot.js';
 import { checkDatabaseConnection } from './routes/auth.js';
 const app = express();
 const port = process.env.PORT || 5000
@@ -21,6 +23,7 @@ checkDatabaseConnection()
 app.use("/auth", authRoutes);
 app.use("/user",userRoutes);
 app.use("/friends", friendsRoutes);
+app.use("/bot", botRoutes);
 
 
 app.get("/health",(req,res)=>{

@@ -38,10 +38,10 @@ model User {
 }
 model Games {
   id            String   @id @default(uuid())
-  white         User     @relation("WhiteGames", fields: [whiteId], references: [id])
-  whiteId       Int
-  black         User     @relation("BlackGames", fields: [blackId], references: [id])
-  blackId       Int
+  white         User?    @relation("WhiteGames", fields: [whiteId], references: [id])
+  whiteId       Int?     // Nullable for bot games where bot plays white
+  black         User?    @relation("BlackGames", fields: [blackId], references: [id])  
+  blackId       Int?     // Nullable for bot games where bot plays black
   time          Int      // Initial time for each player (e.g., 600 seconds for 10 minutes)
   winner        User?    @relation("Winner", fields: [winnerId], references: [id])
   winnerId      Int?

@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: chessly-backend
+    env: node
+    buildCommand: npm install && npx prisma generate && npx prisma deploy
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        value: JWT_SECRET

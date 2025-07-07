@@ -2,17 +2,23 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient();
+// Initialize Prisma with better error handling for production
+const prisma = new PrismaClient({
+  log: ['query', 'info', 'warn', 'error'],
+});
+
 const router = express.Router();
 const JWT_SECRET = 'JWT_SECRET'; // Should match your auth routes
 
-// Ensure Prisma connection
+// Ensure Prisma connection with better error handling
 (async () => {
   try {
     await prisma.$connect();
     console.log('Prisma client connected successfully in friends.js');
   } catch (error) {
     console.error('Failed to connect Prisma client in friends.js:', error);
+    console.error('Database URL exists:', !!process.env.DATABASE_URL);
+    process.exit(1); // Exit if database connection fails
   }
 })();
 
@@ -120,10 +126,15 @@ router.get('/friend-requests/received', authMiddleware, async (req, res) => {
     // Debug logging
     console.log('Attempting to fetch friend requests for user:', userId);
     console.log('Prisma client status:', !!prisma);
-    console.log('FriendRequest model:', !!prisma.friendRequest);
+    console.log('FriendRequest model:', !!prisma?.friendRequest);
+    console.log('Database URL configured:', !!process.env.DATABASE_URL);
     
-    if (!prisma || !prisma.friendRequest) {
-      throw new Error('Prisma client or FriendRequest model not available');
+    if (!prisma) {
+      throw new Error('Prisma client not available');
+    }
+    
+    if (!prisma.friendRequest) {
+      throw new Error('FriendRequest model not available on Prisma client');
     }
 
     const friendRequests = await prisma.friendRequest.findMany({
